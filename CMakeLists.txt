@@ -9,6 +9,9 @@ add_executable(DNASearch main.cpp
         FastaParser.cpp
         FastaParser.h
         Search.cpp
-        Search.h)
+        Search.h
+        DNASequence.cpp
+        DNASequence.h
+)
 
 target_link_libraries(DNASearch PRIVATE cpr::cpr)

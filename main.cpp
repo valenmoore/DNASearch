@@ -3,6 +3,7 @@
 #include <chrono>
 #include "FastaParser.h"
 #include "Search.h"
+#include "DNASequence.h";
 
 double estimateSimilarity(const std::vector<uint64_t>& sig1,
                          const std::vector<uint64_t>& sig2) {
@@ -17,12 +18,40 @@ double estimateSimilarity(const std::vector<uint64_t>& sig1,
 
 int main() {
     std::string fasta_path = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi";
-    std::string seq = FastaParser::readSequenceAsStr(fasta_path, 50000000, 10000000);
-    std::string query = "TTCCCAAATGGGGCAGAAGA";
+    std::string seq = FastaParser::readSequenceAsStr(fasta_path, 0, 51000000);
+    // std::cout << seq << std::endl;
+    std::string query = "TAGGAGGCAGAGCTGTCT";
     std::cout << "sequence loaded." << std::endl;
+    DNASequence smartSeq = DNASequence(seq);
+    std::cout << std::endl;
+    DNASequence querySeq = DNASequence(query);
     std::cout << "building search...";
     auto start = std::chrono::high_resolution_clock::now();
-    Search s(seq);
+    Search s = Search(smartSeq);
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> duration = end - start;
+    std::cout << "build duration: " << duration.count() << std::endl;
+    // smartSeq.print();
+    querySeq.print();
+    start = std::chrono::high_resolution_clock::now();
+    std::vector<int> indices = s.dumbSearch(smartSeq, querySeq, 2);
+    end = std::chrono::high_resolution_clock::now();
+    duration = end - start;
+
+    std::cout << "dumb search duration: " << duration.count() << std::endl;
+    for (int i : indices) {
+        std::cout << i << std::endl;
+    }
+    std::cout << "-----------" << std::endl;
+    start = std::chrono::high_resolution_clock::now();
+    std::unordered_set<int> things = s.smartSearch(querySeq, 2);
+    end = std::chrono::high_resolution_clock::now();
+    duration = end - start;
+    std::cout << "dumb search duration: " << duration.count() << std::endl;
+    for (int i : things) {
+        std::cout << i << std::endl;
+    }
+    /*Search s(seq);
     std::cout << "end search build" << std::endl;
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> duration = end - start;
@@ -51,7 +80,7 @@ int main() {
     for (int r : results) {
         std::cout << r << std::endl;
         std::cout << seq.substr(r, query.length()) << std::endl;
-    }
+    }*/
 
     /*auto start = std::chrono::high_resolution_clock::now();
     std::vector<int> v = Search::dumbSearch(seq, query, 5);

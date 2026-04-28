@@ -7,7 +7,7 @@
 #include <climits>
 #include <iostream>
 
-uint64_t FastaParser::readSequenceAsBits(std::string &fileName, int start, int windowLength) {
+std::vector<uint64_t> FastaParser::readSequenceAsBits(std::string &fileName, int start, int windowLength) {
     std::string str = readSequenceAsStr(fileName, start, windowLength);
     return dnaToBits(str);
 }
@@ -27,28 +27,45 @@ std::string FastaParser::readSequenceAsStr(std::string &fileName, int start, int
     return r.text;
 }
 
-uint64_t FastaParser::dnaToBits(std::string& dna) {
-    uint64_t bits = 0;
+std::vector<uint64_t> FastaParser::dnaToBits(std::string& dna) {
+    std::vector<uint64_t> bits;
+    uint64_t currentBits = 0;
+    int count = 0;
 
     for (char c : dna) {
-        bits <<= 2; // shift over to make space
+        count++;
+        currentBits <<= 2; // shift over to make space
         switch (toupper(c)) {
             case 'A':
-                bits |= 0; // binary 00
+                currentBits |= 0; // binary 00
                 break;
             case 'C':
-                bits |= 1; // binary 01
+                currentBits |= 1; // binary 01
                 break;
             case 'G':
-                bits |= 2; // binary 10
+                currentBits |= 2; // binary 10
                 break;
             case 'T':
-                bits |= 3; // binary 11
+                currentBits |= 3; // binary 11
                 break;
             default:
-                throw std::invalid_argument("Invalid character found in dnaToBits");
+                break; // ignore other characters
+        }
+
+        if (count == 32) {
+            // filled the current uint64 with 64 bits
+            bits.push_back(currentBits);
+            currentBits = 0;
+            count = 0;
         }
     }
+    if (count > 0) {
+        // push remaining bits into vector
+        int remainingShifts = (32 - count) * 2;
+        currentBits <<= remainingShifts; // shift over to the far left of the uint
+        bits.push_back(currentBits);
+    }
+
     return bits;
 }
 

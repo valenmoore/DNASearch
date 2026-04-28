@@ -5,9 +5,12 @@
 #ifndef DNASEARCH_SEARCH_H
 #define DNASEARCH_SEARCH_H
 #include <random>
+#include <utility>
 #include <vector>
 #include <string>
 #include <unordered_set>
+
+#include "DNASequence.h"
 
 
 struct Tile {
@@ -17,50 +20,43 @@ struct Tile {
 
 class Search {
 private:
-    std::vector<std::string> hashSeeds;
+    std::vector<uint64_t> hashSeeds;
     std::vector<Tile> genomeIndex;
-    std::string genomeSequence;
-    int numHashes = 100;
-    int kLength = 4;
-    int windowSize = 100;
-    int stepSize = 50;
+    DNASequence genome;
+    int numHashes = 25;
+    int kLength = 11;
+    int windowSize = 400;
+    int stepSize = 200;
 
-    static int hammingDistance(const std::string& subSeq, const std::string& query, int maxDist);
-
-    std::vector<std::string> generateHashSeeds(int count) {
-        std::vector<std::string> seeds;
-        std::mt19937 gen(42);
-        std::uniform_int_distribution<> dis(0, 3);
-        const char bases[] = {'A', 'T', 'C', 'G'};
+    std::vector<std::uint64_t> generateHashSeeds(int count) {
+        std::vector<std::uint64_t> seeds;
+        std::mt19937_64 gen(42);
+        std::uniform_int_distribution<uint64_t> dis;
 
         for (int i = 0; i < count; i++) {
-            std::string seed = "";
-            for (int j = 0; j < 20; j++) {
-                seed += bases[dis(gen)];
-            }
-            seeds.push_back(seed);
+            seeds.push_back(dis(gen));
         }
         return seeds;
     }
 
-    uint64_t hashKmer(const std::string& kmer, const std::string& seed);
+    uint64_t hashKmer(uint64_t x, uint64_t seed);
     std::unordered_set<std::string> getKmers(const std::string& sequence);
     double estimateSimilarity(const std::vector<uint64_t>& sig1, const std::vector<uint64_t>& sig2);
-    void buildIndex(const std::string& chromosome) {
-        for (int i = 0; i <= chromosome.length() - windowSize; i += stepSize) {
-            std::string window = chromosome.substr(i, windowSize);
-            genomeIndex.push_back({i, computeSignature(window)});
-        }
-    }
+
+    void buildIndex();
 public:
-    Search(const std::string& sequence) {
-        genomeSequence = sequence;
+    Search(std::string sequence) : genome(DNASequence(std::move(sequence))) {
         hashSeeds = generateHashSeeds(numHashes);
-        buildIndex(genomeSequence);
+        buildIndex();
     }
-    std::vector<uint64_t> computeSignature(const std::string& sequence);
-    std::vector<int> dumbSearch(const std::string& query, int maxDist=3);
-    std::unordered_set<int> smartSearch(const std::string& query, int maxDist=3);
+
+    Search(DNASequence genome) : genome(std::move(genome)) {
+        hashSeeds = generateHashSeeds(numHashes);
+        buildIndex();
+    }
+    std::vector<uint64_t> computeSignature(const DNASequence& sequence);
+    std::vector<int> dumbSearch(const DNASequence& seq, const DNASequence& query, int maxDist=3);
+    std::unordered_set<int> smartSearch(const DNASequence& query, int maxDist=3);
 
     std::vector<uint32_t> search(const std::string& sequence, const std::string& query, int maxDist=3);
 };
