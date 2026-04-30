@@ -1,9 +1,9 @@
 #include <iostream>
-#include <bitset>
+#include <limits>
 #include <chrono>
 #include "FastaParser.h"
 #include "Search.h"
-#include "DNASequence.h";
+#include "DNASequence.h"
 
 double estimateSimilarity(const std::vector<uint64_t>& sig1,
                          const std::vector<uint64_t>& sig2) {
@@ -18,7 +18,7 @@ double estimateSimilarity(const std::vector<uint64_t>& sig1,
 
 int main() {
     std::string fasta_path = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi";
-    std::string seq = FastaParser::readSequenceAsStr(fasta_path, 0, 51000000);
+    std::string seq = FastaParser::readSequenceAsStr(fasta_path, 0, 248956422);
     // std::cout << seq << std::endl;
     std::string query = "TAGGAGGCAGAGCTGTCT";
     std::cout << "sequence loaded." << std::endl;

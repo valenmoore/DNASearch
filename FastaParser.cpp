@@ -15,12 +15,13 @@ std::vector<uint64_t> FastaParser::readSequenceAsBits(std::string &fileName, int
 std::string FastaParser::readSequenceAsStr(std::string &fileName, int start, int windowLength) {
     cpr::Response r = cpr::Get(cpr::Url{fileName},
                            cpr::Parameters{{"db", "nuccore"},
-                                           {"id", "NC_000022.11"},
+                                           {"id", "NC_000001.11"},
                                            {"seq_start", std::to_string(start)},
                                            {"seq_stop", std::to_string(start + windowLength)},
                                            {"rettype", "fasta"}});
 
     if (r.status_code != 200) {
+        std::cerr << r.status_code << std::endl;
         throw std::invalid_argument("Error reading sequence");
     }
     cleanSequence(r.text);

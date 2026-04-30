@@ -4,6 +4,7 @@
 
 #include "Search.h"
 
+#include <fstream>
 #include <iostream>
 
 std::vector<int> Search::dumbSearch(const DNASequence& seq, const DNASequence& query, int maxDist) {
@@ -47,6 +48,16 @@ void Search::buildIndex() {
         t.signature = tileSignature;
         genomeIndex.push_back(t);
     }
+    /*std::ofstream outFile("index.bin");
+    if (outFile.is_open()) {
+        for (const auto& t : genomeIndex) {
+            outFile.write(reinterpret_cast<const char*>(&t.position), sizeof(t.position));
+
+            outFile.write(reinterpret_cast<const char*>(t.signature.data()),
+                          t.signature.size() * sizeof(uint64_t));
+        }
+        outFile.close();
+    }*/
 }
 
 std::unordered_set<int> Search::smartSearch(const DNASequence& query, int maxDist) {
