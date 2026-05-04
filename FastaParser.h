@@ -10,8 +10,8 @@
 
 class FastaParser {
 public:
-    static std::vector<uint64_t> readSequenceAsBits(std::string& fileName, int start, int windowLength);
-    static std::string readSequenceAsStr(std::string& fileName, int start, int windowLength);
+    static std::vector<uint64_t> readSequenceAsBits(const std::string& id);
+    static std::string readSequenceAsStr(const std::string& id);
 
     static std::vector<uint64_t> dnaToBits(std::string& dna);
     static std::string bitsToDna(uint64_t bits);

@@ -7,18 +7,17 @@
 #include <climits>
 #include <iostream>
 
-std::vector<uint64_t> FastaParser::readSequenceAsBits(std::string &fileName, int start, int windowLength) {
-    std::string str = readSequenceAsStr(fileName, start, windowLength);
+std::vector<uint64_t> FastaParser::readSequenceAsBits(const std::string &id) {
+    std::string str = readSequenceAsStr(id);
     return dnaToBits(str);
 }
 
-std::string FastaParser::readSequenceAsStr(std::string &fileName, int start, int windowLength) {
-    cpr::Response r = cpr::Get(cpr::Url{fileName},
+std::string FastaParser::readSequenceAsStr(const std::string &id) {
+    cpr::Response r = cpr::Get(cpr::Url{"https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi"},
                            cpr::Parameters{{"db", "nuccore"},
-                                           {"id", "NC_000001.11"},
-                                           {"seq_start", std::to_string(start)},
-                                           {"seq_stop", std::to_string(start + windowLength)},
+                                           {"id", id},
                                            {"rettype", "fasta"}});
+
 
     if (r.status_code != 200) {
         std::cerr << r.status_code << std::endl;

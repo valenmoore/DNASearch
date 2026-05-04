@@ -28,17 +28,17 @@ void Search::buildIndex() {
     std::vector<uint64_t> tileSignature(numHashes);
     for (int i = 0; i <= genome.getNumBases() - windowSize; i += stepSize) {
         std::fill(tileSignature.begin(), tileSignature.end(), UINT64_MAX);
-        uint64_t kmer = genome.getSubseq(i, kLength);
+        uint64_t kmer = 0;
         for (int j = 0; j < windowSize; j++) {
             int baseIndex = j + i;
+            if (baseIndex >= genome.getNumBases()) break;
             kmer = (kmer << 2 | genome.getBase(baseIndex)) & mask; // shift over and insert new base to prevent recalculating kmer every time
             if (j >= kLength - 1) {
-                uint64_t primaryHash = hashKmer(kmer, 0);
-
+                uint64_t hash = 0;
                 for (int h = 0; h < numHashes; h++) {
-                    uint64_t derivedHash = primaryHash ^ hashSeeds[h];
-                    if (derivedHash < tileSignature[h]) {
-                        tileSignature[h] = derivedHash;
+                    hash = hashKmer(kmer, hashSeeds[h]);
+                    if (hash < tileSignature[h]) {
+                        tileSignature[h] = hash;
                     }
                 }
             }
@@ -48,23 +48,14 @@ void Search::buildIndex() {
         t.signature = tileSignature;
         genomeIndex.push_back(t);
     }
-    /*std::ofstream outFile("index.bin");
-    if (outFile.is_open()) {
-        for (const auto& t : genomeIndex) {
-            outFile.write(reinterpret_cast<const char*>(&t.position), sizeof(t.position));
-
-            outFile.write(reinterpret_cast<const char*>(t.signature.data()),
-                          t.signature.size() * sizeof(uint64_t));
-        }
-        outFile.close();
-    }*/
+    std::cout << "built" << std::endl;
 }
 
 std::unordered_set<int> Search::smartSearch(const DNASequence& query, int maxDist) {
     std::vector<uint64_t> querySignature = computeSignature(query);
     std::unordered_set<int> output;
     for (const Tile& t : genomeIndex) {
-        if (estimateSimilarity(t.signature, querySignature) > 0.01) {
+        if (estimateSimilarity(t.signature, querySignature) > 0.00) {
             int searchStart = t.position;
             int searchEnd = t.position + windowSize;
 
@@ -86,6 +77,7 @@ std::unordered_set<int> Search::smartSearch(const DNASequence& query, int maxDis
             }
         }
     }
+
     return output;
 }
 
@@ -128,12 +120,11 @@ std::vector<uint64_t> Search::computeSignature(const DNASequence& sequence) {
         kmer = ((kmer << 2) | sequence.getBase(i)) & mask;
 
         if (i >= kLength - 1) {
-            uint64_t primaryHash = hashKmer(kmer, 0);
-
+            uint64_t hash = 0;
             for (int h = 0; h < numHashes; h++) {
-                uint64_t derivedHash = primaryHash ^ hashSeeds[h];
-                if (derivedHash < signature[h]) {
-                    signature[h] = derivedHash;
+                hash = hashKmer(kmer, hashSeeds[h]);
+                if (hash < signature[h]) {
+                    signature[h] = hash;
                 }
             }
         }
@@ -141,3 +132,46 @@ std::vector<uint64_t> Search::computeSignature(const DNASequence& sequence) {
     return signature;
 }
 
+void Search::loadIndex(const std::string& path) {
+    std::ifstream inFile(path, std::ios::binary);
+
+    int savedNumHashes;
+    inFile.read(reinterpret_cast<char*>(&savedNumHashes), sizeof(savedNumHashes));
+
+    numHashes = savedNumHashes;
+
+    hashSeeds.resize(numHashes);
+    for (int i = 0; i < numHashes; i++) {
+        inFile.read(reinterpret_cast<char*>(&hashSeeds[i]), sizeof(hashSeeds[i]));
+    }
+    int tileCount = 0;
+    while (inFile) {
+        Tile t;
+        if (!inFile.read(reinterpret_cast<char*>(&t.position), sizeof(t.position))) break;
+
+        t.signature.resize(numHashes);
+        inFile.read(reinterpret_cast<char*>(t.signature.data()), numHashes * sizeof(uint64_t));
+
+        genomeIndex.push_back(t);
+        tileCount++;
+    }
+}
+
+void Search::saveIndex(const std::string& savePath) {
+    std::cout << "saving at " << savePath << std::endl;
+    std::ofstream outFile(savePath, std::ios::binary);
+    if (outFile.is_open()) {
+        outFile.write(reinterpret_cast<const char*>(&numHashes), sizeof(numHashes));
+
+        for (const auto& seed : hashSeeds) {
+            outFile.write(reinterpret_cast<const char*>(&seed), sizeof(seed));
+        }
+
+        for (const auto& t : genomeIndex) {
+            outFile.write(reinterpret_cast<const char*>(&t.position), sizeof(t.position));
+            outFile.write(reinterpret_cast<const char*>(t.signature.data()),
+                          t.signature.size() * sizeof(uint64_t));
+        }
+        outFile.close();
+    }
+}
