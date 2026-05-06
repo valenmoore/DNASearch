@@ -14,7 +14,9 @@
 
 #include "DNASequence.h"
 
-
+/**
+ * A struct to hold a tile's position and the array of hashes that make up its signature
+ */
 struct Tile {
     int position;
     std::vector<uint64_t> signature;
@@ -45,16 +47,16 @@ private:
     uint64_t hashKmer(uint64_t x, uint64_t seed);
     std::unordered_set<std::string> getKmers(const std::string& sequence);
     double estimateSimilarity(const std::vector<uint64_t>& sig1, const std::vector<uint64_t>& sig2);
+    std::vector<uint64_t> computeSignature(const DNASequence& sequence);
 
     void buildIndex();
     void loadIndex(const std::string& path);
     void saveIndex(const std::string& savePath);
 public:
-    Search(DNASequence genome) : genome(std::move(genome)) {
-        hashSeeds = generateHashSeeds(numHashes);
-        buildIndex();
-    }
-
+    /**
+     * Initialize a search class
+     * @param genomeId the NCBI id of the genome, e.g. NC_000001.11
+     */
     Search(const std::string& genomeId) : genome(FastaParser::readSequenceAsStr(genomeId)), genomeId(genomeId) {
         std::string filePath = "../cachedGenomes/" + genomeId + ".bin";
         if (std::filesystem::exists(filePath)) {
@@ -67,12 +69,28 @@ public:
             saveIndex(filePath);
         }
     }
-    std::vector<uint64_t> computeSignature(const DNASequence& sequence);
+
+    /**
+     * A O(N*M) search that iterates over every possible window of the genome; should rarely be used instead of smart search
+     * @param seq input sequence to iterate over
+     * @param query the query sequence
+     * @param maxDist the maximum hamming distance to query for
+     * @return the indices of each of the matches in the genome
+     */
     std::vector<int> dumbSearch(const DNASequence& seq, const DNASequence& query, int maxDist=3);
+
+    /**
+     * Uses Locality Sensitive Hashing/clustering to search over a genome efficiently
+     * @param query the query sequence
+     * @param maxDist the maximum hamming distance to query for
+     * @return the indices of each of the matches in the genome
+     */
     std::unordered_set<int> smartSearch(const DNASequence& query, int maxDist=3);
 
-    std::vector<uint32_t> search(const std::string& sequence, const std::string& query, int maxDist=3);
-
+    /**
+     * Gets the genome sequence
+     * @return the genome sequence as a DNASequence
+     */
     const DNASequence& getGenome() const { return genome; }
 };
 

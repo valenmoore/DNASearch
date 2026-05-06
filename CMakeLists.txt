@@ -12,6 +12,7 @@ add_executable(DNASearch main.cpp
         Search.h
         DNASequence.cpp
         DNASequence.h
+        Species.h
 )
 
 target_link_libraries(DNASearch PRIVATE cpr::cpr)
