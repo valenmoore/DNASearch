@@ -71,7 +71,7 @@ public:
     }
 
     /**
-     * A O(N*M) search that iterates over every possible window of the genome; should rarely be used instead of smart search
+     * A O(N*M)-ish search that iterates over every possible window of the genome; should rarely be used instead of smart search
      * @param seq input sequence to iterate over
      * @param query the query sequence
      * @param maxDist the maximum hamming distance to query for

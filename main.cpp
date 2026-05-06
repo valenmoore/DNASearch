@@ -41,9 +41,11 @@ int main() {
         std::cout << i << std::endl;
     }*/
 
-    std::vector<Species*> species;
-    species.push_back(new Species("e coli", "GCF_000005845.2"));
-    species.push_back(new Species("human", "NC_000001.11"));
+    std::vector<std::unique_ptr<Species>> species;
+    species.push_back(std::make_unique<Species>("E. coli", "GCF_000005845.2"));
+    species.push_back(std::make_unique<Species>("Homo Sapiens Chromosome 1", "NC_000001.11"));
+    species.push_back(std::make_unique<Species>("Nycticebus coucang", "GCA_027406575.1"));
+
 
     while (true) {
         std::cout << "\nEnter JSON query (or 'quit'): " << std::endl;
@@ -93,7 +95,7 @@ int main() {
         // validate genomes
         std::vector<Species*> toSearch;
         if (!body.contains("genomes") || body["genomes"] == "all") {
-            for (const auto& s : species) toSearch.push_back(s);
+            for (const auto& s : species) toSearch.push_back(s.get());
         } else if (body["genomes"].is_array()) {
             for (const auto& g : body["genomes"]) {
                 if (!g.is_string()) {
@@ -102,7 +104,7 @@ int main() {
                 }
                 std::string genomeId = g;
                 for (const auto& s : species) {
-                    if (s->getNcbiId() == genomeId) toSearch.push_back(s);
+                    if (s->getNcbiId() == genomeId) toSearch.push_back(s.get());
                 }
             }
         } else {
